@@ -6,3 +6,15 @@ $body = @{
 }
 $authResponse = Invoke-RestMethod -UseBasicParsing -Method Post -Uri "https://login.microsoftonline.com/common/oauth2/v2.0/devicecode" -Body $body
 Write-Output $authResponse
+
+-----------------------------------
+
+$GrantType = "urn:ietf:params:oauth:grant-type:device_code"
+$body=@{
+"client_id" = $ClientID
+"grant_type" = $GrantType
+"code" = $authResponse.device_code
+}
+$Tokens = Invoke-RestMethod -UseBasicParsing -Method Post -Uri "https://login.microsoftonline.com/common/oauth2/v2.0/token" -Body $body -ErrorAction SilentlyContinue
+$Tokens
+$GraphAccessToken = $Tokens.access_token
