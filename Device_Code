@@ -18,3 +18,10 @@ $body=@{
 $Tokens = Invoke-RestMethod -UseBasicParsing -Method Post -Uri "https://login.microsoftonline.com/common/oauth2/v2.0/token" -Body $body -ErrorAction SilentlyContinue
 $Tokens
 $GraphAccessToken = $Tokens.access_token
+
+----------------------------------
+
+
+Microsoft Graph: 00000003-0000-0000-c000-000000000000
+Azure PowerShell: 1950a258-227b-4e31-a9cf-717495945fc2
+Azure CLI: 04b07795-8ddb-461a-bbee-02f9e1bf7b46
