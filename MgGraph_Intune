@@ -1,0 +1,25 @@
+Create a new script
+
+# Step 1: Read the PowerShell script file and encode it to Base64
+$filePath = "C:\Users\test.ps1"
+$fileContent = Get-Content -Path $filePath -Raw  # Read file content as a single string
+$scriptContent = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($fileContent))  # Encode to Base64
+
+# Step 2: Prepare the body to create the script
+$body = @{
+    "@odata.type"             = "#microsoft.graph.deviceManagementScript"
+    "displayName"             = "Get Process"   # The display name for the script
+    "description"             = ""  # A description for the script
+    "scriptContent"           = $scriptContent                   # The Base64-encoded PowerShell script content
+    "runAsAccount"            = "system"                         # Run the script in system context
+    "enforceSignatureCheck"   = $false                           # Do not enforce signature check
+    "fileName"                = "test.ps1"                  # The name of the script file
+    "roleScopeTagIds"         = @("0") # Replace with actual role scope tag IDs if needed
+    "runAs32Bit"              = $false                           # Run in 64-bit mode
+} | ConvertTo-Json -Depth 10
+
+# Step 3: Make the API call to create the new script
+$response = Invoke-MgGraphRequest -Method POST -Uri "https://graph.microsoft.com/beta/deviceManagement/deviceManagementScripts" -Body $body
+
+# Step 4: Output the response to verify the new script creation
+$response
