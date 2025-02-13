@@ -1,0 +1,14 @@
+# Connect to Microsoft Graph with required permissions
+Connect-MgGraph -Scopes "User.Read.All", "AppRoleAssignment.Read.All"
+
+# Get all users and their app role assignments in bulk
+$users = Get-MgUser -All -Property "AppRoleAssignments"
+
+# Filter users with the specific app role assignment
+$filteredUsers = $users | Where-Object {
+    $_.AppRoleAssignments -ne $null -and 
+    ($_.AppRoleAssignments | Where-Object { $_.AppRoleDisplayName -eq "DeviceManagementConfiguration.ReadWrite.All" })
+}
+
+# Display the matching users
+$filteredUsers | Select-Object DisplayName, UserPrincipalName
