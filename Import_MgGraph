@@ -2,8 +2,8 @@ $BasePath = "C:\MgGraph"
 
 # Get all module directories containing a 2.24.0 subdirectory
 $ModulePaths = Get-ChildItem -Path $BasePath -Directory | ForEach-Object {
-    $VersionPath = "$($_.FullName)\2.24.0"
-    if (Test-Path $VersionPath) { $VersionPath }
+    $VersionPaths = Get-ChildItem -Path $_.FullName -Directory | Where-Object { $_.Name -eq "2.24.0" }
+    $VersionPaths.FullName
 }
 
 foreach ($ModulePath in $ModulePaths) {
