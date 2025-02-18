@@ -1,19 +1,22 @@
-# Define the base directory where versions are located
-$BasePath = "C:\MgGraph\ModuleName"
+# Define the base directory where the modules are stored
+$BasePath = "C:\MgGraph"
 
-# Get all first-level subdirectories named '2.24.0'
-$ModulePaths = Get-ChildItem -Path $BasePath -Directory | Where-Object { $_.Name -eq "2.24.0" }
+# Get all subdirectories under $BasePath that contain a '2.24.0' folder
+$ModulePaths = Get-ChildItem -Path $BasePath -Directory | ForEach-Object {
+    $VersionPath = Join-Path $_.FullName "2.24.0"
+    if (Test-Path $VersionPath) { $VersionPath }
+}
 
 if ($ModulePaths.Count -eq 0) {
-    Write-Host "No 2.24.0 directories found in $BasePath!" -ForegroundColor Red
+    Write-Host "No 2.24.0 directories found under $BasePath!" -ForegroundColor Red
     exit
 }
 
 foreach ($ModulePath in $ModulePaths) {
     Write-Host "`nProcessing modules from: $ModulePath`n" -ForegroundColor Cyan
 
-    # Ensure Microsoft.Graph.Authentication is loaded first
-    $AuthModule = Get-ChildItem -Path $ModulePath.FullName -Filter "Microsoft.Graph.Authentication.psd1" | Select-Object -First 1
+    # Ensure Microsoft.Graph.Authentication is loaded first if it exists
+    $AuthModule = Get-ChildItem -Path $ModulePath -Filter "Microsoft.Graph.Authentication.psd1" | Select-Object -First 1
     if ($AuthModule) {
         try {
             Write-Host "Importing authentication module: $($AuthModule.FullName)"
@@ -21,8 +24,6 @@ foreach ($ModulePath in $ModulePaths) {
         } catch {
             Write-Host "Failed to import authentication module: $($AuthModule.FullName) - $_" -ForegroundColor Red
         }
-    } else {
-        Write-Host "Microsoft.Graph.Authentication.psd1 not found in $ModulePath!" -ForegroundColor Red
     }
 
     # Ensure Microsoft.Graph module is loaded
@@ -34,7 +35,7 @@ foreach ($ModulePath in $ModulePaths) {
     }
 
     # Get all other .psd1 and .psm1 files, excluding Microsoft.Graph.Authentication.psd1
-    $ModuleFiles = Get-ChildItem -Path $ModulePath.FullName -Include "*.psd1", "*.psm1" -Exclude "Microsoft.Graph.Authentication.psd1"
+    $ModuleFiles = Get-ChildItem -Path $ModulePath -Include "*.psd1", "*.psm1" -Exclude "Microsoft.Graph.Authentication.psd1"
 
     foreach ($Module in $ModuleFiles) {
         try {
@@ -46,4 +47,4 @@ foreach ($ModulePath in $ModulePaths) {
     }
 }
 
-Write-Host "`nAll applicable modules from first-level 2.24.0 directories have been processed!" -ForegroundColor Green
+Write-Host "`nAll applicable modules from 2.24.0 subdirectories have been processed!" -ForegroundColor Green
