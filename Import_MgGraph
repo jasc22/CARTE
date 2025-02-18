@@ -1,7 +1,20 @@
 $ModulePath = "C:\Path\To\MgGraph"
 
-# Get all .psd1 and .psm1 files recursively
-$ModuleFiles = Get-ChildItem -Path $ModulePath -Recurse -Include "*.psd1", "*.psm1"
+# Load Microsoft.Graph.Authentication.psd1 first
+$AuthModule = Get-ChildItem -Path $ModulePath -Recurse -Filter "Microsoft.Graph.Authentication.psd1" | Select-Object -First 1
+if ($AuthModule) {
+    try {
+        Write-Host "Importing authentication module: $($AuthModule.FullName)"
+        Import-Module $AuthModule.FullName -Force -ErrorAction Stop
+    } catch {
+        Write-Host "Failed to import authentication module: $($AuthModule.FullName) - $_" -ForegroundColor Red
+    }
+} else {
+    Write-Host "Microsoft.Graph.Authentication.psd1 not found!" -ForegroundColor Red
+}
+
+# Get all other .psd1 and .psm1 files recursively, excluding Microsoft.Graph.Authentication.psd1
+$ModuleFiles = Get-ChildItem -Path $ModulePath -Recurse -Include "*.psd1", "*.psm1" | Where-Object { $_.Name -ne "Microsoft.Graph.Authentication.psd1" }
 
 foreach ($Module in $ModuleFiles) {
     try {
