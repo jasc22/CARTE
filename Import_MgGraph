@@ -8,3 +8,56 @@ $ModulePaths = Get-ChildItem -Path $BasePath -Directory | ForEach-Object {
 
 if ($ModulePaths.Count -eq 0) {
     Write-Host "No 2.24.0 directories found under $BasePath!" -ForegroundColor Red
+    exit
+}
+
+# Arrays to store module files
+$AuthModules = @()
+$GraphModules = @()
+$OtherModules = @()
+
+# Categorize module files into separate arrays
+foreach ($ModulePath in $ModulePaths) {
+    $ModuleFiles = Get-ChildItem -Path $ModulePath -Include "*.psd1", "*.psm1" | Select-Object -ExpandProperty FullName
+    
+    if ($ModulePath -match "Microsoft.Graph.Authentication\\2.24.0") {
+        $AuthModules += $ModuleFiles
+    } elseif ($ModulePath -match "Microsoft.Graph\\2.24.0") {
+        $GraphModules += $ModuleFiles
+    } else {
+        $OtherModules += $ModuleFiles
+    }
+}
+
+# Function to process module loading from an array
+function Load-Modules {
+    param ($ModuleList, $ModuleType)
+
+    if ($ModuleList.Count -eq 0) {
+        Write-Host "No $ModuleType modules found to load." -ForegroundColor Yellow
+        return
+    }
+
+    Write-Host "`nLoading $ModuleType modules:`n" -ForegroundColor Cyan
+
+    foreach ($Module in $ModuleList) {
+        try {
+            Write-Host "Loading: $Module"
+            ipmo $Module -Force -Scope Global -ErrorAction Stop
+            Write-Host "Successfully loaded: $(Split-Path -Leaf $Module)" -ForegroundColor Green
+        } catch {
+            Write-Host "Failed to load: $Module - $_" -ForegroundColor Red
+        }
+    }
+}
+
+# 1. Load Microsoft.Graph.Authentication modules first
+Load-Modules -ModuleList $AuthModules -ModuleType "Microsoft.Graph.Authentication"
+
+# 2. Load all other modules
+Load-Modules -ModuleList $OtherModules -ModuleType "Other"
+
+# 3. Load Microsoft.Graph modules last
+Load-Modules -ModuleList $GraphModules -ModuleType "Microsoft.Graph"
+
+Write-Host "`nAll modules loaded successfully!" -ForegroundColor Green
