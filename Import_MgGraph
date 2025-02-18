@@ -1,16 +1,28 @@
 $ModulePath = "C:\Path\To\MgGraph"
 
-# Load Microsoft.Graph.Authentication.psd1 first
-$AuthModule = Get-ChildItem -Path $ModulePath -Recurse -Filter "Microsoft.Graph.Authentication.psd1" | Select-Object -First 1
-if ($AuthModule) {
-    try {
-        Write-Host "Importing authentication module: $($AuthModule.FullName)"
-        Import-Module $AuthModule.FullName -Force -ErrorAction Stop
-    } catch {
-        Write-Host "Failed to import authentication module: $($AuthModule.FullName) - $_" -ForegroundColor Red
+# Ensure Microsoft.Graph.Authentication is loaded first
+if (-not (Get-Module Microsoft.Graph.Authentication)) {
+    $AuthModule = Get-ChildItem -Path $ModulePath -Recurse -Filter "Microsoft.Graph.Authentication.psd1" | Select-Object -First 1
+    if ($AuthModule) {
+        try {
+            Write-Host "Importing authentication module: $($AuthModule.FullName)"
+            Import-Module $AuthModule.FullName -Force -ErrorAction Stop
+        } catch {
+            Write-Host "Failed to import authentication module: $($AuthModule.FullName) - $_" -ForegroundColor Red
+        }
+    } else {
+        Write-Host "Microsoft.Graph.Authentication.psd1 not found!" -ForegroundColor Red
     }
 } else {
-    Write-Host "Microsoft.Graph.Authentication.psd1 not found!" -ForegroundColor Red
+    Write-Host "Microsoft.Graph.Authentication is already loaded."
+}
+
+# Import the entire Microsoft.Graph module to ensure dependencies are handled
+try {
+    Write-Host "Ensuring all Microsoft.Graph modules are loaded."
+    Import-Module Microsoft.Graph -Force -ErrorAction Stop
+} catch {
+    Write-Host "Failed to import Microsoft.Graph module - $_" -ForegroundColor Red
 }
 
 # Get all other .psd1 and .psm1 files recursively, excluding Microsoft.Graph.Authentication.psd1
