@@ -8,15 +8,45 @@ if ($ModuleFiles.Count -eq 0) {
     exit
 }
 
-# Print and load each module
-foreach ($Module in $ModuleFiles) {
+$FailedModules = @()  # Array to store failed modules
+
+# Function to load a module and track failures
+function Load-Module {
+    param ($Module)
+
     Write-Host "Loading: $Module"
     try {
         ipmo $Module -Force -Scope Global -ErrorAction Stop
         Write-Host "Successfully loaded: $(Split-Path -Leaf $Module)" -ForegroundColor Green
     } catch {
         Write-Host "Failed to load: $Module - $_" -ForegroundColor Red
+        return $Module  # Return the failed module to retry later
     }
 }
 
-Write-Host "`nAll modules processed!" -ForegroundColor Green
+# First attempt to load all modules
+foreach ($Module in $ModuleFiles) {
+    $Failed = Load-Module -Module $Module
+    if ($Failed) { $FailedModules += $Failed }
+}
+
+# Retry loading failed modules if any exist
+if ($FailedModules.Count -gt 0) {
+    Write-Host "`nRetrying failed modules..." -ForegroundColor Yellow
+
+    $StillFailedModules = @()
+
+    foreach ($Module in $FailedModules) {
+        $Failed = Load-Module -Module $Module
+        if ($Failed) { $StillFailedModules += $Failed }
+    }
+
+    if ($StillFailedModules.Count -gt 0) {
+        Write-Host "`nSome modules still failed to load after retrying:" -ForegroundColor Red
+        $StillFailedModules | ForEach-Object { Write-Host $_ -ForegroundColor Red }
+    } else {
+        Write-Host "`nAll modules loaded successfully after retrying!" -ForegroundColor Green
+    }
+} else {
+    Write-Host "`nAll modules loaded successfully on the first attempt!" -ForegroundColor Green
+}
