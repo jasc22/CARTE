@@ -6,7 +6,7 @@ if (-not (Get-Module Microsoft.Graph.Authentication)) {
     if ($AuthModule) {
         try {
             Write-Host "Importing authentication module: $($AuthModule.FullName)"
-            Import-Module $AuthModule.FullName -Force -ErrorAction Stop
+            Import-Module $AuthModule.FullName -Force -Scope Global -ErrorAction Stop
         } catch {
             Write-Host "Failed to import authentication module: $($AuthModule.FullName) - $_" -ForegroundColor Red
         }
@@ -20,7 +20,7 @@ if (-not (Get-Module Microsoft.Graph.Authentication)) {
 # Import the entire Microsoft.Graph module to ensure dependencies are handled
 try {
     Write-Host "Ensuring all Microsoft.Graph modules are loaded."
-    Import-Module Microsoft.Graph -Force -ErrorAction Stop
+    Import-Module Microsoft.Graph -Force -Scope Global -ErrorAction Stop
 } catch {
     Write-Host "Failed to import Microsoft.Graph module - $_" -ForegroundColor Red
 }
@@ -31,7 +31,7 @@ $ModuleFiles = Get-ChildItem -Path $ModulePath -Recurse -Include "*.psd1", "*.ps
 foreach ($Module in $ModuleFiles) {
     try {
         Write-Host "Importing module: $($Module.FullName)"
-        Import-Module $Module.FullName -Force -ErrorAction Stop
+        Import-Module $Module.FullName -Force -Scope Global -ErrorAction Stop
     } catch {
         Write-Host "Failed to import module: $($Module.FullName) - $_" -ForegroundColor Red
     }
