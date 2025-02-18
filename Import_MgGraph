@@ -1,0 +1,13 @@
+$ModulePath = "C:\Path\To\MgGraph"
+
+# Get all .psd1 and .psm1 files recursively
+$ModuleFiles = Get-ChildItem -Path $ModulePath -Recurse -Include "*.psd1", "*.psm1"
+
+foreach ($Module in $ModuleFiles) {
+    try {
+        Write-Host "Importing module: $($Module.FullName)"
+        Import-Module $Module.FullName -Force -ErrorAction Stop
+    } catch {
+        Write-Host "Failed to import module: $($Module.FullName) - $_" -ForegroundColor Red
+    }
+}
