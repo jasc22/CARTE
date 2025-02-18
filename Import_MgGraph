@@ -42,3 +42,21 @@ try {
 } catch {
     Write-Host "Failed to import Microsoft.Graph module - $_" -ForegroundColor Red
 }
+
+
+
+
+$BasePath = "C:\MgGraph"
+
+# Ensure the base path exists
+if (-Not (Test-Path $BasePath)) {
+    Write-Host "The specified base path '$BasePath' does not exist!" -ForegroundColor Red
+    return
+}
+
+# Get all module directories containing a 2.24.0 subdirectory
+$ModulePaths = Get-ChildItem -Path $BasePath -Directory | ForEach-Object {
+    $VersionPaths = Get-ChildItem -Path $_.FullName -Directory | Where-Object { $_.Name -eq "2.24.0" }
+    $VersionPaths.FullName
+}
+
