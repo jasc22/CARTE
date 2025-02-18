@@ -16,17 +16,23 @@ $AuthPath = $ModulePaths | Where-Object { $_ -match "Microsoft.Graph.Authenticat
 $GraphPath = $ModulePaths | Where-Object { $_ -match "Microsoft.Graph\\2.24.0" }
 $OtherModules = $ModulePaths | Where-Object { $_ -ne $AuthPath -and $_ -ne $GraphPath }
 
-# Function to load modules using ipmo
+# Function to load modules using ipmo and print what gets loaded
 function Load-Modules {
     param ($ModulePath)
 
     Write-Host "`nLoading modules from: $ModulePath`n" -ForegroundColor Cyan
     $ModuleFiles = Get-ChildItem -Path $ModulePath -Include "*.psm1", "*.psd1"
 
+    if ($ModuleFiles.Count -eq 0) {
+        Write-Host "No module files found in $ModulePath!" -ForegroundColor Yellow
+        return
+    }
+
     foreach ($Module in $ModuleFiles) {
         try {
             Write-Host "Loading: $($Module.FullName)"
             ipmo $Module.FullName -Force -Scope Global -ErrorAction Stop
+            Write-Host "Successfully loaded: $($Module.Name)" -ForegroundColor Green
         } catch {
             Write-Host "Failed to load: $($Module.FullName) - $_" -ForegroundColor Red
         }
@@ -35,10 +41,10 @@ function Load-Modules {
 
 # 1. Load Microsoft.Graph.Authentication first
 if ($AuthPath) {
-    Write-Host "`n🔹 Loading Microsoft.Graph.Authentication first from: $AuthPath`n" -ForegroundColor Magenta
+    Write-Host "`nLoading Microsoft.Graph.Authentication first from: $AuthPath`n" -ForegroundColor Magenta
     Load-Modules -ModulePath $AuthPath
 } else {
-    Write-Host "⚠️ Microsoft.Graph.Authentication module not found, skipping!" -ForegroundColor Yellow
+    Write-Host "Microsoft.Graph.Authentication module not found, skipping!" -ForegroundColor Yellow
 }
 
 # 2. Load all other modules
@@ -48,10 +54,10 @@ foreach ($ModulePath in $OtherModules) {
 
 # 3. Load Microsoft.Graph last
 if ($GraphPath) {
-    Write-Host "`n🔹 Loading Microsoft.Graph last from: $GraphPath`n" -ForegroundColor Blue
+    Write-Host "`nLoading Microsoft.Graph last from: $GraphPath`n" -ForegroundColor Blue
     Load-Modules -ModulePath $GraphPath
 } else {
-    Write-Host "⚠️ Microsoft.Graph module not found, skipping!" -ForegroundColor Yellow
+    Write-Host "Microsoft.Graph module not found, skipping!" -ForegroundColor Yellow
 }
 
-Write-Host "`n✅ All modules loaded successfully!" -ForegroundColor Green
+Write-Host "`nAll modules loaded successfully!" -ForegroundColor Green
