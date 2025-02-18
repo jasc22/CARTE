@@ -1,12 +1,25 @@
-# Define the base directory where the modules are stored
+# Define the base directory where modules are stored
 $BasePath = "C:\MgGraph"
 
-# Get all subdirectories under $BasePath that contain a '2.24.0' folder
-$ModulePaths = Get-ChildItem -Path $BasePath -Directory | ForEach-Object {
-    $VersionPath = Join-Path $_.FullName "2.24.0"
-    if (Test-Path $VersionPath) { $VersionPath }
+# Get all first-level subdirectories under $BasePath
+$Subdirectories = Get-ChildItem -Path $BasePath -Directory
+
+# Initialize an array to hold valid 2.24.0 paths
+$ModulePaths = @()
+
+# Iterate through each subdirectory and check if it contains a '2.24.0' folder
+foreach ($Subdir in $Subdirectories) {
+    $VersionPath = Join-Path $Subdir.FullName "2.24.0"
+    
+    if (Test-Path $VersionPath) {
+        Write-Host "Found: $VersionPath" -ForegroundColor Green
+        $ModulePaths += $VersionPath
+    } else {
+        Write-Host "Skipping (No 2.24.0): $VersionPath" -ForegroundColor Yellow
+    }
 }
 
+# If no valid paths are found, exit
 if ($ModulePaths.Count -eq 0) {
     Write-Host "No 2.24.0 directories found under $BasePath!" -ForegroundColor Red
     exit
@@ -24,6 +37,8 @@ foreach ($ModulePath in $ModulePaths) {
         } catch {
             Write-Host "Failed to import authentication module: $($AuthModule.FullName) - $_" -ForegroundColor Red
         }
+    } else {
+        Write-Host "Microsoft.Graph.Authentication.psd1 not found in $ModulePath!" -ForegroundColor Yellow
     }
 
     # Ensure Microsoft.Graph module is loaded
