@@ -33,40 +33,51 @@ if (-not $AuthenticationPath -and $ModulePaths.Count -eq 0 -and -not $MicrosoftG
     exit
 }
 
-# Function to process module imports
+# Function to process module imports with debugging
 function Import-ModulesFromPath {
     param ($ModulePath)
-    
+
     Write-Host "`nProcessing modules from: $ModulePath`n" -ForegroundColor Cyan
 
-    # Get all .psd1 and .psm1 files
-    $ModuleFiles = Get-ChildItem -Path $ModulePath -Include "*.psd1", "*.psm1"
+    # Get all .psm1 and .psd1 files
+    $ModuleFiles = Get-ChildItem -Path $ModulePath -Include "*.psm1", "*.psd1"
+
+    if ($ModuleFiles.Count -eq 0) {
+        Write-Host "No module files found in $ModulePath!" -ForegroundColor Red
+        return
+    }
 
     foreach ($Module in $ModuleFiles) {
         try {
-            Write-Host "Importing module: $($Module.FullName)"
-            Import-Module $Module.FullName -Force -Scope Global -ErrorAction Stop
+            Write-Host "Attempting to import: $($Module.FullName)"
+            
+            # Prefer .psm1 over .psd1 if both exist
+            if ($Module.Extension -eq ".psm1") {
+                Import-Module $Module.FullName -Force -Scope Global -ErrorAction Stop
+            } elseif ($Module.Extension -eq ".psd1") {
+                Import-Module $Module.FullName -Force -Scope Global -ErrorAction Stop
+            }
 
-            # Verify if the module is actually loaded
+            # Verify if the module is loaded
             $ModuleName = ($Module.BaseName)
             if (Get-Module -Name $ModuleName) {
-                Write-Host "Module '$ModuleName' successfully loaded." -ForegroundColor Green
+                Write-Host "✅ Module '$ModuleName' successfully loaded." -ForegroundColor Green
             } else {
-                Write-Host "Warning: Module '$ModuleName' did not appear to load." -ForegroundColor Yellow
+                Write-Host "⚠️ Warning: Module '$ModuleName' did not appear to load." -ForegroundColor Yellow
             }
 
         } catch {
-            Write-Host "Failed to import module: $($Module.FullName) - $_" -ForegroundColor Red
+            Write-Host "❌ Failed to import module: $($Module.FullName) - $_" -ForegroundColor Red
         }
     }
 }
 
 # 1. Load Microsoft.Graph.Authentication first if found
 if ($AuthenticationPath) {
-    Write-Host "`nLoading Microsoft.Graph.Authentication first from: $AuthenticationPath`n" -ForegroundColor Magenta
+    Write-Host "`n🔹 Loading Microsoft.Graph.Authentication first from: $AuthenticationPath`n" -ForegroundColor Magenta
     Import-ModulesFromPath -ModulePath $AuthenticationPath
 } else {
-    Write-Host "Microsoft.Graph.Authentication\2.24.0 not found, skipping authentication module!" -ForegroundColor Yellow
+    Write-Host "⚠️ Microsoft.Graph.Authentication\2.24.0 not found, skipping authentication module!" -ForegroundColor Yellow
 }
 
 # 2. Load all other modules (excluding Authentication and Microsoft.Graph)
@@ -76,10 +87,10 @@ foreach ($ModulePath in $ModulePaths) {
 
 # 3. Load Microsoft.Graph last if found
 if ($MicrosoftGraphPath) {
-    Write-Host "`nLoading Microsoft.Graph last from: $MicrosoftGraphPath`n" -ForegroundColor Blue
+    Write-Host "`n🔹 Loading Microsoft.Graph last from: $MicrosoftGraphPath`n" -ForegroundColor Blue
     Import-ModulesFromPath -ModulePath $MicrosoftGraphPath
 } else {
-    Write-Host "Microsoft.Graph\2.24.0 not found, skipping Microsoft.Graph module!" -ForegroundColor Yellow
+    Write-Host "⚠️ Microsoft.Graph\2.24.0 not found, skipping Microsoft.Graph module!" -ForegroundColor Yellow
 }
 
-Write-Host "`nAll applicable modules from 2.24.0 subdirectories have been processed!" -ForegroundColor Green
+Write-Host "`n✅ All applicable modules from 2.24.0 subdirectories have been processed!" -ForegroundColor Green
