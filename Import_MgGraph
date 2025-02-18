@@ -46,6 +46,15 @@ function Import-ModulesFromPath {
         try {
             Write-Host "Importing module: $($Module.FullName)"
             Import-Module $Module.FullName -Force -Scope Global -ErrorAction Stop
+
+            # Verify if the module is actually loaded
+            $ModuleName = ($Module.BaseName)
+            if (Get-Module -Name $ModuleName) {
+                Write-Host "Module '$ModuleName' successfully loaded." -ForegroundColor Green
+            } else {
+                Write-Host "Warning: Module '$ModuleName' did not appear to load." -ForegroundColor Yellow
+            }
+
         } catch {
             Write-Host "Failed to import module: $($Module.FullName) - $_" -ForegroundColor Red
         }
