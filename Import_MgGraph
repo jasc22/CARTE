@@ -1,16 +1,19 @@
-$BasePath = "C:\MgGraph"
+# Define the base directory where versions are located
+$BasePath = "C:\MgGraph\ModuleName"
 
-# Get all module directories containing a 2.24.0 subdirectory
-$ModulePaths = Get-ChildItem -Path $BasePath -Directory | ForEach-Object {
-    $VersionPaths = Get-ChildItem -Path $_.FullName -Directory | Where-Object { $_.Name -eq "2.24.0" }
-    $VersionPaths.FullName
+# Get all first-level subdirectories named '2.24.0'
+$ModulePaths = Get-ChildItem -Path $BasePath -Directory | Where-Object { $_.Name -eq "2.24.0" }
+
+if ($ModulePaths.Count -eq 0) {
+    Write-Host "No 2.24.0 directories found in $BasePath!" -ForegroundColor Red
+    exit
 }
 
 foreach ($ModulePath in $ModulePaths) {
-    Write-Host "Processing modules in: $ModulePath"
+    Write-Host "`nProcessing modules from: $ModulePath`n" -ForegroundColor Cyan
 
     # Ensure Microsoft.Graph.Authentication is loaded first
-    $AuthModule = Get-ChildItem -Path $ModulePath -Filter "Microsoft.Graph.Authentication.psd1" | Select-Object -First 1
+    $AuthModule = Get-ChildItem -Path $ModulePath.FullName -Filter "Microsoft.Graph.Authentication.psd1" | Select-Object -First 1
     if ($AuthModule) {
         try {
             Write-Host "Importing authentication module: $($AuthModule.FullName)"
@@ -22,8 +25,16 @@ foreach ($ModulePath in $ModulePaths) {
         Write-Host "Microsoft.Graph.Authentication.psd1 not found in $ModulePath!" -ForegroundColor Red
     }
 
-    # Import other .psd1 and .psm1 files, excluding Microsoft.Graph.Authentication.psd1
-    $ModuleFiles = Get-ChildItem -Path $ModulePath -Include "*.psd1", "*.psm1" | Where-Object { $_.Name -ne "Microsoft.Graph.Authentication.psd1" }
+    # Ensure Microsoft.Graph module is loaded
+    try {
+        Write-Host "Ensuring all Microsoft.Graph modules are loaded."
+        Import-Module Microsoft.Graph -Force -Scope Global -ErrorAction Stop
+    } catch {
+        Write-Host "Failed to import Microsoft.Graph module - $_" -ForegroundColor Red
+    }
+
+    # Get all other .psd1 and .psm1 files, excluding Microsoft.Graph.Authentication.psd1
+    $ModuleFiles = Get-ChildItem -Path $ModulePath.FullName -Include "*.psd1", "*.psm1" -Exclude "Microsoft.Graph.Authentication.psd1"
 
     foreach ($Module in $ModuleFiles) {
         try {
@@ -35,28 +46,4 @@ foreach ($ModulePath in $ModulePaths) {
     }
 }
 
-# Ensure the full Microsoft.Graph module is loaded for dependencies
-try {
-    Write-Host "Ensuring all Microsoft.Graph modules are loaded."
-    Import-Module Microsoft.Graph -Force -Scope Global -ErrorAction Stop
-} catch {
-    Write-Host "Failed to import Microsoft.Graph module - $_" -ForegroundColor Red
-}
-
-
-
-
-$BasePath = "C:\MgGraph"
-
-# Ensure the base path exists
-if (-Not (Test-Path $BasePath)) {
-    Write-Host "The specified base path '$BasePath' does not exist!" -ForegroundColor Red
-    return
-}
-
-# Get all module directories containing a 2.24.0 subdirectory
-$ModulePaths = Get-ChildItem -Path $BasePath -Directory | ForEach-Object {
-    $VersionPaths = Get-ChildItem -Path $_.FullName -Directory | Where-Object { $_.Name -eq "2.24.0" }
-    $VersionPaths.FullName
-}
-
+Write-Host "`nAll applicable modules from first-level 2.24.0 directories have been processed!" -ForegroundColor Green
