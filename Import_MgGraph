@@ -1,96 +1,57 @@
-# Define the base directory where modules are stored
 $BasePath = "C:\MgGraph"
 
-# Get all first-level subdirectories under $BasePath
-$Subdirectories = Get-ChildItem -Path $BasePath -Directory
-
-# Initialize arrays to store valid 2.24.0 paths
-$ModulePaths = @()
-$MicrosoftGraphPath = $null
-$AuthenticationPath = $null
-
-# Iterate through each subdirectory and check if it contains a '2.24.0' folder
-foreach ($Subdir in $Subdirectories) {
-    $VersionPath = Join-Path $Subdir.FullName "2.24.0"
-    
-    if (Test-Path $VersionPath) {
-        if ($Subdir.Name -eq "Microsoft.Graph.Authentication") {
-            $AuthenticationPath = $VersionPath  # Store Microsoft.Graph.Authentication to load first
-        } elseif ($Subdir.Name -eq "Microsoft.Graph") {
-            $MicrosoftGraphPath = $VersionPath  # Store Microsoft.Graph to load last
-        } else {
-            Write-Host "Found: $VersionPath" -ForegroundColor Green
-            $ModulePaths += $VersionPath
-        }
-    } else {
-        Write-Host "Skipping (No 2.24.0): $VersionPath" -ForegroundColor Yellow
-    }
+# Get all 2.24.0 directories under each subdirectory of C:\MgGraph
+$ModulePaths = Get-ChildItem -Path $BasePath -Directory | ForEach-Object {
+    $VersionPath = Join-Path $_.FullName "2.24.0"
+    if (Test-Path $VersionPath) { $VersionPath }
 }
 
-# If no valid paths are found, exit
-if (-not $AuthenticationPath -and $ModulePaths.Count -eq 0 -and -not $MicrosoftGraphPath) {
+if ($ModulePaths.Count -eq 0) {
     Write-Host "No 2.24.0 directories found under $BasePath!" -ForegroundColor Red
     exit
 }
 
-# Function to process module imports with debugging
-function Import-ModulesFromPath {
+# Separate Microsoft.Graph.Authentication and Microsoft.Graph from other modules
+$AuthPath = $ModulePaths | Where-Object { $_ -match "Microsoft.Graph.Authentication\\2.24.0" }
+$GraphPath = $ModulePaths | Where-Object { $_ -match "Microsoft.Graph\\2.24.0" }
+$OtherModules = $ModulePaths | Where-Object { $_ -ne $AuthPath -and $_ -ne $GraphPath }
+
+# Function to load modules using ipmo
+function Load-Modules {
     param ($ModulePath)
 
-    Write-Host "`nProcessing modules from: $ModulePath`n" -ForegroundColor Cyan
-
-    # Get all .psm1 and .psd1 files
+    Write-Host "`nLoading modules from: $ModulePath`n" -ForegroundColor Cyan
     $ModuleFiles = Get-ChildItem -Path $ModulePath -Include "*.psm1", "*.psd1"
-
-    if ($ModuleFiles.Count -eq 0) {
-        Write-Host "No module files found in $ModulePath!" -ForegroundColor Red
-        return
-    }
 
     foreach ($Module in $ModuleFiles) {
         try {
-            Write-Host "Attempting to import: $($Module.FullName)"
-            
-            # Prefer .psm1 over .psd1 if both exist
-            if ($Module.Extension -eq ".psm1") {
-                Import-Module $Module.FullName -Force -Scope Global -ErrorAction Stop
-            } elseif ($Module.Extension -eq ".psd1") {
-                Import-Module $Module.FullName -Force -Scope Global -ErrorAction Stop
-            }
-
-            # Verify if the module is loaded
-            $ModuleName = ($Module.BaseName)
-            if (Get-Module -Name $ModuleName) {
-                Write-Host "✅ Module '$ModuleName' successfully loaded." -ForegroundColor Green
-            } else {
-                Write-Host "⚠️ Warning: Module '$ModuleName' did not appear to load." -ForegroundColor Yellow
-            }
-
+            Write-Host "Loading: $($Module.FullName)"
+            ipmo $Module.FullName -Force -Scope Global -ErrorAction Stop
         } catch {
-            Write-Host "❌ Failed to import module: $($Module.FullName) - $_" -ForegroundColor Red
+            Write-Host "Failed to load: $($Module.FullName) - $_" -ForegroundColor Red
         }
     }
 }
 
-# 1. Load Microsoft.Graph.Authentication first if found
-if ($AuthenticationPath) {
-    Write-Host "`n🔹 Loading Microsoft.Graph.Authentication first from: $AuthenticationPath`n" -ForegroundColor Magenta
-    Import-ModulesFromPath -ModulePath $AuthenticationPath
+# 1. Load Microsoft.Graph.Authentication first
+if ($AuthPath) {
+    Write-Host "`n🔹 Loading Microsoft.Graph.Authentication first from: $AuthPath`n" -ForegroundColor Magenta
+    Load-Modules -ModulePath $AuthPath
 } else {
-    Write-Host "⚠️ Microsoft.Graph.Authentication\2.24.0 not found, skipping authentication module!" -ForegroundColor Yellow
+    Write-Host "⚠️ Microsoft.Graph.Authentication module not found, skipping!" -ForegroundColor Yellow
 }
 
-# 2. Load all other modules (excluding Authentication and Microsoft.Graph)
-foreach ($ModulePath in $ModulePaths) {
-    Import-ModulesFromPath -ModulePath $ModulePath
+# 2. Load all other modules
+foreach ($ModulePath in $OtherModules) {
+    Load-Modules -ModulePath $ModulePath
 }
 
-# 3. Load Microsoft.Graph last if found
-if ($MicrosoftGraphPath) {
-    Write-Host "`n🔹 Loading Microsoft.Graph last from: $MicrosoftGraphPath`n" -ForegroundColor Blue
-    Import-ModulesFromPath -ModulePath $MicrosoftGraphPath
+# 3. Load Microsoft.Graph last
+if ($GraphPath) {
+    Write-Host "`n🔹 Loading Microsoft.Graph last from: $GraphPath`n" -ForegroundColor Blue
+    Load-Modules -ModulePath $GraphPath
 } else {
-    Write-Host "⚠️ Microsoft.Graph\2.24.0 not found, skipping Microsoft.Graph module!" -ForegroundColor Yellow
+    Write-Host "⚠️ Microsoft.Graph module not found, skipping!" -ForegroundColor Yellow
 }
 
-Write-Host "`n✅ All applicable modules from 2.24.0 subdirectories have been processed!" -ForegroundColor Green
+Write-Host "`n✅ All modules loaded successfully!" -ForegroundColor Green
