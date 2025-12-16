@@ -1,1 +1,19 @@
 https://login.microsoftonline.com/organizations/oauth2/authorize?client_id=04b07795-8ddb-461a-bbee-02f9e1bf7b46&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A8400%2F&resource=00000002-0000-0000-c000-000000000000&state=CA&prompt=select_account&login_hint=[email]
+
+------------------------------------
+
+$uri = "https://login.microsoftonline.com/organizations/oauth2/token"
+
+$body = @{
+    grant_type    = "authorization_code"
+    client_id     = "04b07795-8ddb-461a-bbee-02f9e1bf7b46"
+    code          = "1.A"
+    redirect_uri  = "http://localhost:8400/"
+    resource      = "https://graph.microsoft.com"
+}
+
+Invoke-RestMethod `
+    -Method Post `
+    -Uri $uri `
+    -ContentType "application/x-www-form-urlencoded" `
+    -Body $body
