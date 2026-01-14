@@ -1,9 +1,12 @@
-# Get all users and check for profile photo
+# Authenticate once
+$ctx = Connect-MgGraph -Scopes "User.Read.All"
+
+# Reuse context in all subsequent calls
 $users = Get-MgUser -All
 
 foreach ($user in $users) {
     try {
-        $photo = Get-MgUserPhoto -UserId $user.Id -ErrorAction Stop
+        $photo = Get-MgUserPhoto -UserId $user.Id -Context $ctx -ErrorAction Stop
         if ($photo) {
             [PSCustomObject]@{
                 DisplayName = $user.DisplayName
@@ -12,12 +15,10 @@ foreach ($user in $users) {
             }
         }
     } catch {
-        # No photo found
+        # skip users without photo
     }
 }
 
-
-Get-MgUser -All | Where-Object { try { Get-MgUserPhoto -UserId $_.Id -ErrorAction Stop; $true } catch { $false } } | Select-Object DisplayName, UserPrincipalName
 
 
 $tkn = Invoke-MgGraphRequest -Uri "https://graph.microsoft.com/v1.0/users/$($userId)/photo/`$value" -ContentType "image/jpeg" -OutputType HttpResponseMessage
