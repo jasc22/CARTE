@@ -17,4 +17,7 @@ foreach ($user in $users) {
 }
 
 
+Get-MgUser -All | Where-Object { try { Get-MgUserPhoto -UserId $_.Id -ErrorAction Stop; $true } catch { $false } } | Select-Object DisplayName, UserPrincipalName
+
+
 $tkn = Invoke-MgGraphRequest -Uri "https://graph.microsoft.com/v1.0/users/$($userId)/photo/`$value" -ContentType "image/jpeg" -OutputType HttpResponseMessage
