@@ -1,1 +1,20 @@
+# Get all users and check for profile photo
+$users = Get-MgUser -All
+
+foreach ($user in $users) {
+    try {
+        $photo = Get-MgUserPhoto -UserId $user.Id -ErrorAction Stop
+        if ($photo) {
+            [PSCustomObject]@{
+                DisplayName = $user.DisplayName
+                UserPrincipalName = $user.UserPrincipalName
+                HasPhoto = $true
+            }
+        }
+    } catch {
+        # No photo found
+    }
+}
+
+
 $tkn = Invoke-MgGraphRequest -Uri "https://graph.microsoft.com/v1.0/users/$($userId)/photo/`$value" -ContentType "image/jpeg" -OutputType HttpResponseMessage
