@@ -1,0 +1,7 @@
+| **Resource / Cloud App**                 | **App ID (ApplicationId)**             | **Notes**                                                                                          |
+| ---------------------------------------- | -------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| **Exchange Online**                      | `00000002-0000-0ff1-ce00-000000000000` | First-party Entra app for Exchange Online and related services. *Standard Microsoft app ID.*       |
+| **SharePoint Online**                    | `00000003-0000-0ff1-ce00-000000000000` | First-party Entra app for SharePoint and OneDrive services. ([Microsoft Learn][1])                 |
+| **Microsoft Teams Services**             | `57ff2da0-773e-42df-b2af-ffb7a2317929` | Teams service app (commonly shown in CA app lists). *Often displayed simply as “Microsoft Teams”.* |
+| **Azure Virtual Desktop (core service)** | `9cdead84-a844-4324-93f2-b2e6bb768d07` | Used for AVD authentication to the gateway and service. ([Microsoft Learn][2])                     |
+| **Windows 365 (Cloud PC)**               | `0af06dc6-e4b5-4f28-818e-e78e62d137a5` | Used for Windows 365 Cloud PC portal and actions. ([Microsoft Learn][2])                           |
