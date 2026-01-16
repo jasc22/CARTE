@@ -1,23 +1,16 @@
-# Authenticate once
-$ctx = Connect-MgGraph -Scopes "User.Read.All"
-
-# Reuse context in all subsequent calls
-$users = Get-MgUser -All
-
-foreach ($user in $users) {
+foreach ($u in $users) {
     try {
-        $photo = Get-MgUserPhoto -UserId $user.Id -Context $ctx -ErrorAction Stop
-        if ($photo) {
-            [PSCustomObject]@{
-                DisplayName = $user.DisplayName
-                UserPrincipalName = $user.UserPrincipalName
-                HasPhoto = $true
-            }
+        Invoke-MgGraphRequest -Uri "https://graph.microsoft.com/v1.0/users/$($u.Id)/photo" -Method GET -ErrorAction Stop | Out-Null
+        [PSCustomObject]@{
+            DisplayName = $u.DisplayName
+            UserPrincipalName = $u.UserPrincipalName
+            HasPhoto = $true
         }
     } catch {
-        # skip users without photo
+        # 404 = no photo
     }
 }
+
 
 
 
