@@ -1,17 +1,3 @@
-foreach ($u in $users) {
-    try {
-        Invoke-MgGraphRequest -Uri "https://graph.microsoft.com/v1.0/users/$($u.Id)/photo" -Method GET -ErrorAction Stop | Out-Null
-        [PSCustomObject]@{
-            DisplayName = $u.DisplayName
-            UserPrincipalName = $u.UserPrincipalName
-            HasPhoto = $true
-        }
-    } catch {
-        # 404 = no photo
-    }
-}
+$mgRequest = Invoke-MgGraphRequest -Uri "https://graph.microsoft.com/v1.0/users/$($userId)/photo/`$value" -ContentType "image/jpeg" -OutputType HttpResponseMessage
 
-
-
-
-$tkn = Invoke-MgGraphRequest -Uri "https://graph.microsoft.com/v1.0/users/$($userId)/photo/`$value" -ContentType "image/jpeg" -OutputType HttpResponseMessage
+$mgRequest.RequestMessage.Headers.Authorization.Parameter
