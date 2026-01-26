@@ -1,0 +1,17 @@
+$apps = Get-MgApplication `
+  -Filter "SignInAudience eq 'AzureADMultipleOrgs' or SignInAudience eq 'AzureADandPersonalMicrosoftAccount'" |
+  ForEach-Object {
+    $uris = @(
+      $_.Web.RedirectUris
+      $_.Spa.RedirectUris
+      $_.PublicClient.RedirectUris
+    ) | Where-Object { $_ }
+
+    foreach ($uri in $uris) {
+      [PSCustomObject]@{
+        DisplayName = $_.DisplayName
+        AppId       = $_.AppId
+        RedirectUri = $uri
+      }
+    }
+  }
