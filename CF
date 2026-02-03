@@ -17,3 +17,6 @@ Invoke-RestMethod `
     -Uri $uri `
     -ContentType "application/x-www-form-urlencoded" `
     -Body $body
+
+
+https://login.microsoftonline.com/organizations/oauth2/v2.0/authorize?client_id=04b07795-8ddb-461a-bbee-02f9e1bf7b46&response_type=code&redirect_uri=http://localhost&scope=https://graph.microsoft.com/.default offline_access&state=CA&prompt=select_account
